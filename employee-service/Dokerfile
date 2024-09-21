@@ -1,0 +1,24 @@
+# Utilise une image Maven pour la compilation
+FROM maven:3.8.1-openjdk-11 AS build
+WORKDIR /app
+
+# Copie le fichier pom.xml et télécharge les dépendances
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Copie le code source et compile le projet
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# Utilise une image Java pour l'exécution de l'application
+FROM openjdk:11-jre-slim
+WORKDIR /app
+
+# Copie l'artefact compilé depuis l'étape précédente
+COPY --from=build /app/target/employee-service-1.0-SNAPSHOT-runner.jar /app/employee-service.jar
+
+# Expose le port
+EXPOSE 8080
+
+# Commande pour exécuter l'application
+CMD ["java", "-jar", "/app/employee-service.jar"]
